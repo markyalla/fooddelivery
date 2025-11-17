@@ -1,0 +1,468 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Admin Dashboard
+                </h1>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-success me-3">
+                        <i class="fas fa-circle me-1"></i>System Online
+                    </span>
+                    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="card-title h6">Total Orders</div>
+                            <div class="h3">{{ total_orders }}</div>
+                            <small>Active orders in system</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('order.index_view') }}" class="small text-white stretched-link">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="card-title h6">Total Deliveries</div>
+                            <div class="h3">{{ total_deliveries }}</div>
+                            <small>All delivery records</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('delivery.index_view') }}" class="small text-white stretched-link">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="card-title h6">Pending Deliveries</div>
+                            <div class="h3">{{ pending_deliveries }}</div>
+                            <small>Awaiting assignment</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('delivery.index_view', flt1_delivery_status_equals='pending') }}" class="small text-white stretched-link">Assign Drivers</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="card-title h6">Active Drivers</div>
+                            <div class="h3">{{ total_drivers }}</div>
+                            <small>Registered drivers</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a href="{{ url_for('user.index_view', flt1_is_driver_equals='1') }}" class="small text-white stretched-link">Manage Drivers</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <a href="{{ url_for('delivery.create_view') }}" class="btn btn-outline-primary d-block">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                                <br>New Delivery
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <a href="{{ url_for('user.create_view') }}" class="btn btn-outline-success d-block">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                <br>Add User
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <a href="{{ url_for('restaurant.create_view') }}" class="btn btn-outline-info d-block">
+                                <i class="fas fa-store fa-2x mb-2"></i>
+                                <br>Add Restaurant
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <a href="{{ url_for('fooditem.create_view') }}" class="btn btn-outline-warning d-block">
+                                <i class="fas fa-utensils fa-2x mb-2"></i>
+                                <br>Add Food Item
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <button class="btn btn-outline-secondary d-block" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt fa-2x mb-2"></i>
+                                <br>Refresh Data
+                            </button>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6 mb-3">
+                            <a href="#" class="btn btn-outline-dark d-block" data-bs-toggle="modal" data-bs-target="#systemStatusModal">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <br>System Status
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Tables -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        Recent Orders
+                    </h5>
+                    <a href="{{ url_for('order.index_view') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Pending Assignments
+                    </h5>
+                    <a href="{{ url_for('delivery.index_view', flt1_delivery_status_equals='pending') }}" class="btn btn-sm btn-outline-danger">Assign Now</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Delivery ID</th>
+                                    <th>Address</th>
+                                    <th>Priority</th>
+                                    <th>Waiting</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingDeliveriesTable">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Metrics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        System Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 col-6">
+                            <div class="border-end">
+                                <h4 class="text-success" id="successRate">--</h4>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="border-end">
+                                <h4 class="text-info" id="avgDeliveryTime">--</h4>
+                                <small class="text-muted">Avg Delivery Time</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="border-end">
+                                <h4 class="text-warning" id="activeDrivers">--</h4>
+                                <small class="text-muted">Drivers Online</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <h4 class="text-primary" id="todayOrders">--</h4>
+                            <small class="text-muted">Today's Orders</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Modal -->
+<div class="modal fade" id="systemStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-server me-2"></i>
+                    System Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Database Connection</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-success me-2">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Connected</span>
+                        </div>
+                        
+                        <h6>Location Services</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-success me-2">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>MapBox API Active</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>System Uptime</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-info me-2">
+                                <i class="fas fa-clock"></i>
+                            </span>
+                            <span id="systemUptime">Loading...</span>
+                        </div>
+                        
+                        <h6>Last Backup</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="badge bg-warning me-2">
+                                <i class="fas fa-database"></i>
+                            </span>
+                            <span>Manual backup required</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="runSystemCheck()">
+                    <i class="fas fa-check-double me-1"></i>
+                    Run Full Check
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dashboard functionality
+function refreshDashboard() {
+    location.reload();
+}
+
+function runSystemCheck() {
+    // Simulate system check
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking...';
+    button.disabled = true;
+    
+    setTimeout(() => {
+        button.innerHTML = '<i class="fas fa-check me-1"></i>All Systems OK';
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+    }, 3000);
+}
+
+// Load dashboard data
+document.addEventListener('DOMContentLoaded', function() {
+    // Update system uptime
+    const startTime = new Date();
+    function updateUptime() {
+        const now = new Date();
+        const uptime = Math.floor((now - startTime) / 1000);
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = uptime % 60;
+        document.getElementById('systemUptime').textContent = 
+            `${hours}h ${minutes}m ${seconds}s`;
+    }
+    setInterval(updateUptime, 1000);
+    
+    // Load recent data (you would fetch this from your Flask endpoints)
+    loadRecentOrders();
+    loadPendingDeliveries();
+    loadSystemMetrics();
+});
+
+function loadRecentOrders() {
+    // This would be an actual API call in production
+    setTimeout(() => {
+        const tbody = document.getElementById('recentOrdersTable');
+        tbody.innerHTML = `
+            <tr><td>#001</td><td>John Doe</td><td>$25.99</td><td><span class="badge bg-success">Completed</span></td><td>2 min ago</td></tr>
+            <tr><td>#002</td><td>Jane Smith</td><td>$18.50</td><td><span class="badge bg-info">In Transit</span></td><td>5 min ago</td></tr>
+            <tr><td>#003</td><td>Bob Johnson</td><td>$32.75</td><td><span class="badge bg-warning">Pending</span></td><td>8 min ago</td></tr>
+        `;
+    }, 1000);
+}
+
+function loadPendingDeliveries() {
+    setTimeout(() => {
+        const tbody = document.getElementById('pendingDeliveriesTable');
+        tbody.innerHTML = `
+            <tr>
+                <td>#D001</td>
+                <td>123 Main St</td>
+                <td><span class="badge bg-danger">High</span></td>
+                <td>15 min</td>
+                <td><a href="#" class="btn btn-sm btn-primary">Assign</a></td>
+            </tr>
+            <tr>
+                <td>#D002</td>
+                <td>456 Oak Ave</td>
+                <td><span class="badge bg-warning">Medium</span></td>
+                <td>8 min</td>
+                <td><a href="#" class="btn btn-sm btn-primary">Assign</a></td>
+            </tr>
+        `;
+    }, 1200);
+}
+
+function loadSystemMetrics() {
+    setTimeout(() => {
+        document.getElementById('successRate').textContent = '94.2%';
+        document.getElementById('avgDeliveryTime').textContent = '28 min';
+        document.getElementById('activeDrivers').textContent = '12';
+        document.getElementById('todayOrders').textContent = '47';
+    }, 800);
+}
+</script>
+
+<style>
+.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover,
+.btn-outline-secondary:hover,
+.btn-outline-dark:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
+}
+
+.bg-primary .card-footer a:hover,
+.bg-warning .card-footer a:hover,
+.bg-danger .card-footer a:hover,
+.bg-success .card-footer a:hover {
+    text-decoration: underline;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+@media (max-width: 768px) {
+    .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+{% endblock %}

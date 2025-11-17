@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Food Items</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table-container { margin-top: 20px; }
+        .action-btn { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">Manage Food Items</h1>
+        <!-- Button to trigger create food item modal -->
+        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createFoodItemModal">
+            Add New Food Item
+        </button>
+
+        <!-- Food Items Table -->
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Product Picture</th>
+                        <th>Restaurant</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for food_item in food_items %}
+                    <tr>
+                        <td>{{ food_item.id }}</td>
+                        <td>{{ food_item.name }}</td>
+                        <td>{{ "${:,.2f}".format(food_item.price) }}</td>
+                        <td>
+                            {% if food_item.product_picture %}
+                                <img src="{{ url_for('uploaded_file', filename=food_item.product_picture) }}" alt="Product Image" width="100">
+                            {% else %}
+                                No Image
+                            {% endif %}
+                        </td>
+                        <td>{{ food_item.restaurant.name }}</td>
+                        <td>
+                            <button type="button" class="btn btn-warning btn-sm action-btn" data-bs-toggle="modal" data-bs-target="#editFoodItemModal" 
+                                    onclick="populateEditForm('{{ food_item.id }}', '{{ food_item.name }}', '{{ food_item.price }}', '{{ food_item.product_picture}}', '{{ food_item.restaurant_id }}')">
+                                Edit
+                            </button>
+                            <form action="{{ url_for('delete_food_item', id=food_item.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete {{ food_item.name }}?');">
+                                <button type="submit" class="btn btn-danger btn-sm action-btn">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No food items found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Create Food Item Modal -->
+        <div class="modal fade" id="createFoodItemModal" tabindex="-1" aria-labelledby="createFoodItemModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createFoodItemModalLabel">Add New Food Item</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ url_for('create_food_item') }}" method="POST" enctype="multipart/form-data">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="product_picture" class="form-label">Product Picture</label>
+                                <input type="file" class="form-control" id="product_picture" name="product_picture" accept="image/*">
+                                <div class="form-text">Upload an image file (JPG, PNG, etc.)</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="restaurant_id" class="form-label">Restaurant</label>
+                                <select class="form-select" id="restaurant_id" name="restaurant_id" required>
+                                    <option value="" disabled selected>Select a restaurant</option>
+                                    {% for restaurant in restaurants %}
+                                        <option value="{{ restaurant.id }}">{{ restaurant.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Food Item</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Food Item Modal -->
+        <div class="modal fade" id="editFoodItemModal" tabindex="-1" aria-labelledby="editFoodItemModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editFoodItemModalLabel">Edit Food Item</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ url_for('update_food_item') }}" method="POST">
+                        <div class="modal-body">
+                            <input type="hidden" id="edit_id" name="id">
+                            <div class="mb-3">
+                                <label for="edit_name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="edit_name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_price" class="form-label">Price</label>
+                                <input type="number" step="0.01" class="form-control" id="edit_price" name="price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_product_picture" class="form-label">Product Picture URL</label>
+                                <input type="url" class="form-control" id="edit_product_picture" name="product_picture">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_restaurant_id" class="form-label">Restaurant</label>
+                                <select class="form-select" id="edit_restaurant_id" name="restaurant_id" required>
+                                    <option value="" disabled>Select a restaurant</option>
+                                    {% for restaurant in restaurants %}
+                                        <option value="{{ restaurant.id }}">{{ restaurant.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Update Food Item</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function populateEditForm(id, name, price, product_picture, restaurant_id) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_price').value = price;
+            document.getElementById('edit_product_picture').value = product_picture;
+            document.getElementById('edit_restaurant_id').value = restaurant_id;
+        }
+    </script>
+</body>
+</html>

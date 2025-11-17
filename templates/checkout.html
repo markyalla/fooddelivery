@@ -1,0 +1,52 @@
+{% extends 'base.html' %}  
+
+{% block content %}
+<form action="{{ url_for('checkout') }}" method="post" class="needs-validation" novalidate onsubmit="captureLocation(event)">
+    <div class="mb-3">  
+        <label for="transaction_id" class="form-label">Transaction ID:</label>  
+        <input type="text" name="transaction_id" class="form-control" id="transaction_id" required>  
+        <div class="invalid-feedback">Please enter your transaction ID.</div>  
+    </div>  
+
+    <div class="mb-3">  
+        <label for="phone_number" class="form-label">Phone Number:</label>  
+        <input type="text" name="phone_number" class="form-control" id="phone_number" required>  
+        <div class="invalid-feedback">Please enter your phone number.</div>  
+    </div>  
+
+    <div class="mb-3">  
+        <label for="delivery_address" class="form-label">Delivery Address:</label>  
+        <input type="text" name="delivery_address" class="form-control" id="delivery_address" required>  
+        <div class="invalid-feedback">Please enter your delivery address.</div>  
+    </div>  
+
+    <button type="submit" class="btn btn-primary">Submit Payment</button>
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+</form>
+
+<script>
+function captureLocation(event) {
+    event.preventDefault();
+    
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            document.getElementById('latitude').value = position.coords.latitude;
+            document.getElementById('longitude').value = position.coords.longitude;
+            event.target.submit();
+        },
+        function(error) {
+            alert("Unable to get your location. Using default coordinates.");
+            document.getElementById('latitude').value = 6.0955;
+            document.getElementById('longitude').value = -0.2563;
+            event.target.submit();
+        }
+    );
+}
+</script>
+{% endblock %}

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Delivery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-container {
+            padding: 20px;
+        }
+        
+        .tracking-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        #deliveryMap {
+            height: 400px;
+            width: 100%;
+        }
+        
+        .status-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .status-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .status-step::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            width: 2px;
+            height: 40px;
+            background: #dee2e6;
+            z-index: 1;
+        }
+        
+        .status-step:last-child::before {
+            display: none;
+        }
+        
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            position: relative;
+            z-index: 2;
+            background: white;
+            border: 3px solid #dee2e6;
+            color: #6c757d;
+        }
+        
+        .status-icon.active {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .status-icon.current {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        }
+        
+        .status-content h6 {
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .status-content small {
+            color: #6c757d;
+        }
+        
+        .driver-info {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .eta-card {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 5px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 9999;
+        }
+        
+        .connected { background-color: #28a745; }
+        .disconnected { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid main-container">
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="connection-status connected">
+            <i class="fas fa-wifi me-1"></i> Connected
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="tracking-card">
+                    <!-- Header -->
+                    <div class="header-section">
+                        <h2><i class="fas fa-truck me-2"></i>Track Your Delivery</h2>
+                        <p class="mb-0">
+                            <span class="live-indicator"></span>
+                            <strong>Live Tracking</strong> - Real-time updates
+                        </p>
+                    </div>
+                    
+                    <!-- Map Section -->
+                    <div class="p-3">
+                        <div id="deliveryMap" class="mb-3"></div>
+                        <p class="text-center text-muted small mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Blue marker: Your location | Red marker: Driver location (updates automatically)
+                        </p>
+                    </div>
+                    
+                    <div class="row p-3">
+                        <!-- Status Timeline -->
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-list-alt me-2"></i>Delivery Status</h5>
+                            <div class="status-timeline" id="statusTimeline">
+                                <!-- Status steps will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Driver & ETA Info -->
+                        <div class="col-md-6">
+                            <div id="driverInfo" class="driver-info" style="display: none;">
+                                <h6><i class="fas fa-user-tie me-2"></i>Your Driver</h6>
+                                <div id="driverDetails">
+                                    <!-- Driver details will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <div id="etaInfo" class="eta-card" style="display: none;">
+                                <h6><i class="fas fa-clock me-2"></i>Estimated Arrival</h6>
+                                <h3 id="etaTime">Calculating...</h3>
+                                <small>We'll notify you when your order is nearby!</small>
+                            </div>
+                            
+                            <!-- Back to Orders Button -->
+                            <div class="mt-3">
+                                <a href="{{ url_for('my_orders') }}" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to My Orders
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Initialize delivery data from the server
+        const deliveries = '{{ deliveries|tojson }}';
+        const mapboxToken = '{{ mapbox_access_token }}';
+        
+        // Initialize map
+        let map, userMarker, driverMarker;
+        let currentDelivery = deliveries.length > 0 ? deliveries[0] : null;
+        
+        function initializeMap() {
+            const defaultLat = currentDelivery?.user_latitude || 5.6037;
+            const defaultLng = currentDelivery?.user_longitude || -0.1870;
+            
+            map = L.map('deliveryMap').setView([defaultLat, defaultLng], 13);
+            
+            // Add Mapbox tiles
+            L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${mapboxToken}`, {
+                attribution: 'Map data © <a href="https://www.mapbox.com/">Mapbox</a>',
+                maxZoom: 18,
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(map);
+            
+            // Custom icons
+            const userIcon = L.divIcon({
+                html: '<i class="fas fa-home" style="color: #007bff; font-size: 24px;"></i>',
+                iconSize: [30, 30],
+                className: 'custom-div-icon'
+            });
+            
+            const driverIcon = L.divIcon({
+                html: '<i class="fas fa-car" style="color: #dc3545; font-size: 24px;"></i>',
+                iconSize: [30, 30],
+                className: 'custom-div-icon'
+            });
+            
+            // Add user marker
+            if (currentDelivery) {
+                userMarker = L.marker([defaultLat, defaultLng], {icon: userIcon})
+                    .addTo(map)
+                    .bindPopup(`
+                        <b>Your Delivery Location</b><br>
+                        ${currentDelivery.delivery_address}
+                    `);
+                
+                // Add driver marker if available
+                if (currentDelivery.vehicle_latitude && currentDelivery.vehicle_longitude) {
+                    driverMarker = L.marker([currentDelivery.vehicle_latitude, currentDelivery.vehicle_longitude], {icon: driverIcon})
+                        .addTo(map)
+                        .bindPopup(`
+                            <b>Driver Location</b><br>
+                            ${currentDelivery.driver_name}<br>
+                            <small>Last updated: Just now</small>
+                        `);
+                    
+                    // Fit map to show both markers
+                    const group = new L.featureGroup([userMarker, driverMarker]);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+        }
+        
+        function updateStatusTimeline(status) {
+            const statusSteps = [
+                {id: 'pending', icon: 'fas fa-clock', title: 'Order Placed', desc: 'Your order has been placed'},
+                {id: 'assigned', icon: 'fas fa-user-check', title: 'Driver Assigned', desc: 'A driver has been assigned'},
+                {id: 'picked_up', icon: 'fas fa-box', title: 'Order Picked Up', desc: 'Driver picked up your order'},
+                {id: 'in_transit', icon: 'fas fa-truck', title: 'On the Way', desc: 'Driver is heading to you'},
+                {id: 'delivered', icon: 'fas fa-check-circle', title: 'Delivered', desc: 'Order successfully delivered'}
+            ];
+            
+            const timeline = document.getElementById('statusTimeline');
+            timeline.innerHTML = '';
+            
+            const currentIndex = statusSteps.findIndex(step => step.id === status);
+            
+            statusSteps.forEach((step, index) => {
+                const isActive = index <= currentIndex;
+                const isCurrent = index === currentIndex;
+                
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'status-step';
+                stepDiv.innerHTML = `
+                    <div class="status-icon ${isActive ? (isCurrent ? 'current' : 'active') : ''}">
+                        <i class="${step.icon}"></i>
+                    </div>
+                    <div class="status-content">
+                        <h6>${step.title}</h6>
+                        <small>${step.desc}</small>
+                    </div>
+                `;
+                timeline.appendChild(stepDiv);
+            });
+        }
+        
+        function updateDriverInfo(delivery) {
+            const driverInfo = document.getElementById('driverInfo');
+            const driverDetails = document.getElementById('driverDetails');
+            
+            if (delivery.driver_name && delivery.driver_name !== 'N/A') {
+                driverDetails.innerHTML = `
+                    <strong>${delivery.driver_name}</strong><br>
+                    <small><i class="fas fa-car me-1"></i>${delivery.vehicle_name}</small><br>
+                    <small><i class="fas fa-id-card me-1"></i>${delivery.license_number}</small>
+                `;
+                driverInfo.style.display = 'block';
+                
+                // Show ETA if in transit
+                if (delivery.delivery_status === 'in_transit') {
+                    const etaInfo = document.getElementById('etaInfo');
+                    const etaTime = document.getElementById('etaTime');
+                    etaTime.textContent = delivery.estimated_delivery_time || '15-20 minutes';
+                    etaInfo.style.display = 'block';
+                }
+            } else {
+                driverInfo.style.display = 'none';
+            }
+        }
+        
+        // Initialize Socket.IO
+        const socket = io();
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Connection status
+        socket.on('connect', function() {
+            connectionStatus.className = 'connection-status connected';
+            connectionStatus.innerHTML = '<i class="fas fa-wifi me-1"></i> Connected';
+        });
+        
+        socket.on('disconnect', function() {
+            connectionStatus.className = 'connection-status disconnected';
+            connectionStatus.innerHTML = '<i class="fas fa-wifi me-1"></i> Disconnected';
+        });
+        
+        // Join delivery room for real-time updates
+        if (currentDelivery) {
+            socket.emit('join_delivery_room', {delivery_id: currentDelivery.id});
+            
+            // Listen for real-time updates
+            socket.on('location_update', function(data) {
+                if (data.delivery_id === currentDelivery.id) {
+                    const newLat = data.vehicle_latitude;
+                    const newLng = data.vehicle_longitude;
+                    
+                    if (driverMarker) {
+                        driverMarker.setLatLng([newLat, newLng]);
+                    } else {
+                        const driverIcon = L.divIcon({
+                            html: '<i class="fas fa-car" style="color: #dc3545; font-size: 24px;"></i>',
+                            iconSize: [30, 30],
+                            className: 'custom-div-icon'
+                        });
+                        
+                        driverMarker = L.marker([newLat, newLng], {icon: driverIcon})
+                            .addTo(map)
+                            .bindPopup(`
+                                <b>Driver Location</b><br>
+                                ${data.driver_name}<br>
+                                <small>Last updated: Just now</small>
+                            `);
+                        
+                        // Fit map to show both markers
+                        const group = new L.featureGroup([userMarker, driverMarker]);
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    }
+                    
+                    showNotification('Driver location updated', 'success');
+                }
+            });
+            
+            socket.on('status_update', function(data) {
+                if (data.delivery_id === currentDelivery.id) {
+                    updateStatusTimeline(data.status);
+                    currentDelivery.delivery_status = data.status;
+                    updateDriverInfo(currentDelivery);
+                    showNotification(`Status updated: ${data.status}`, 'info');
+                }
+            });
+        }
+        
+        function showNotification(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Get user's current location and update server
+        function updateUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    function(position) {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        
+                        // Update server
+                        fetch('/update_user_location', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (userMarker) {
+                                userMarker.setLatLng([latitude, longitude]);
+                            }
+                        })
+                        .catch(error => console.error('Error updating location:', error));
+                    },
+                    function(error) {
+                        console.error("Error getting location:", error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 30000,
+                        timeout: 27000
+                    }
+                );
+            }
+        }
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            if (currentDelivery) {
+                updateStatusTimeline(currentDelivery.delivery_status);
+                updateDriverInfo(currentDelivery);
+            }
+            updateUserLocation();
+        });
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (currentDelivery) {
+                socket.emit('leave_delivery_room', {delivery_id: currentDelivery.id});
+            }
+        });
+    </script>
+</body>
+</html>
